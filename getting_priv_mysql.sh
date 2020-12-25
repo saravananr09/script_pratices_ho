@@ -1,4 +1,5 @@
 #!/bin/bash 
+#saravanan
 #  set -x
 MYSQL="/mnt/e/back/vicky/mysql_base/bin"
 USER="root"
