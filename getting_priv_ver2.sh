@@ -30,6 +30,15 @@ get_user()
     fi
 } 
 
+
+# func to  get priv's info from mysql.Db table
+get_priv_mysqldb()
+{
+    read -p "Enter the user name " user;
+    has_priv=($($mysql_con -e "select * from mysql.user where user='$user'\G" |grep 'Y'|awk '{print $1}'|cut -d ':' -f1))
+}
+
+
 while true; do
     get_user
     # sleep 4
