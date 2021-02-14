@@ -133,7 +133,7 @@ if [[ "$(echo "$str" | tr '[:upper:]' '[:lower:]')" == *"yes"* ]] ;then
     	esac
 	done
 else
-	echo "setted DEFAULT :: binlog_format ==> ROW";
+	echo "setting DEFAULT :: binlog_format ==> ROW";
 	assigning_configs[binlog_format]="ROW"
 fi
 
