@@ -1,0 +1,5 @@
+ basedir=/home/saravanan/mysql_5.7
+ log-bin=relay-master
+ server-id=21
+ datadir=/home/saravanan/mysql_5.7/mysql_3306_data
+ port=3306

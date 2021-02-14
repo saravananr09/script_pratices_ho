@@ -1,0 +1,6 @@
+[mysqld]
+basedir=/home/saravanan/mysql_5.7
+log-bin=misc-master
+server-id=21
+datadir=/home/saravanan/mysql_5.7/misc-master_data
+port=3306
