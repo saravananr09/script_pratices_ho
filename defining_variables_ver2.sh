@@ -6,6 +6,7 @@
  declare -A assigning_configs
  declare -a mysql_vars
  declare -a unassigned_mysql_vars
+ declare -a binlogformat
 
 echo "****************************************************************"
 sysuser=$(whoami)
@@ -53,25 +54,24 @@ let_assign_configs(){
 }
 
 mathing_buffer(){
-	local declare -A config
+	declare -A buff_vars
 	local bf_name
 	memory=$(cat /proc/meminfo |grep -i "MemFree" |awk ' { print int( $2 / 1024 ) }')
 	calc_buffer=$(($memory/3))
-	config[innodb_buffer_pool_size]="$calc_buffer"
+	buff_vars[innodb_buffer_pool_size]="$calc_buffer"
 
-	if [[ "$calc_buffer" -gt 10 ]]
+	if [[ "$calc_buffer" -gt 1000 ]]
 	then 
-    	config[innodb_buffer_pool_instances]=2
+    	buff_vars[innodb_buffer_pool_instances]=2
 	else    
-    	config[innodb_buffer_pool_instances]=1
+    	buff_vars[innodb_buffer_pool_instances]=1
 	fi
 
-	for bf_name in ${!config[@]}
+	for bf_name in ${!buff_vars[@]}
 	do
-		echo "$bf_name ... ${config[$bf_name]}"
-		assigning_configs+=(["$bf_name"]=${config[$bf_name]})
+		# echo "$bf_name ... ${configss[$bf_name]}"
+		assigning_configs+=(["$bf_name"]=${buff_vars[$bf_name]})
 	done
-
 }
 
 # mathing_buffer
@@ -103,35 +103,61 @@ else
 	echo -e "Variables got assigned ! \n "
 fi
 
-
 [[ ! -z "$uid" ]] && echo -e "uid added !!" || uid="mysql_${assigning_configs[port]}";
  echo "uid is configed as $uid";
-sleep 1
 assigning_configs[basedir]="/home/$sysuser/mysql_5.7"
 assigning_configs[datadir]="${assigning_configs[basedir]}/${uid}_data"
+# for buffer pool
+read -p "Enter yes or no to measure and setting buffer vars for this server ! " str
+if [[ "$(echo "$str" | tr '[:upper:]' '[:lower:]')" == *"yes"* ]] ;then
+    echo "yes ... measuring optimal buffer for this $uid instance ..."
+	sleep 1
+	mathing_buffer
+else
+    echo "typed : No .. so not initing buffers !!! "
+fi
+# for bin-log format
+read -p "Do you wish to change binlog format for this server ! " str
+if [[ "$(echo "$str" | tr '[:upper:]' '[:lower:]')" == *"yes"* ]] ;then
+    echo "yes ... collecting log format types..."
+	sleep 1
+	binlogformat=(ROW STATEMENT MIXED)
+	PS3="Please select log format type : "
+	select format in ${binlogformat[*]}
+	do
+    	case $format in
+        	$format) 
+            	echo "selected $format type !!!"
+            	assigning_configs[binlog_format]="$format"
+            	break;;
+    	esac
+	done
+else
+	echo "setted DEFAULT :: binlog_format ==> ROW";
+	assigning_configs[binlog_format]="ROW"
+fi
 
 
 # logging final cnf
 cnf_name="mysql_${assigning_configs[port]}.cnf"
-echo "[mysqld]" >> $cnf_name
+# echo "[mysqld]" >> $cnf_name
 for output in "${!assigning_configs[@]}"
 do
 	# log to file
-	echo "$output=${assigning_configs[$output]}" >> $cnf_name
+	echo "$output => ${assigning_configs[$output]}";
+	# echo "$output=${assigning_configs[$output]}" >> $cnf_name
 done 
 
+
+exit
 # final config's
 # set -x
 echo "***************************************************"
 echo "Printing cnf and it's values from collected-variables"
 echo "***************************************************"
 # echo "printing final configs ${!assigning_configs[@]}'=='${assigning_configs[@]}"
-echo -e "$(cat "$cnf_name") \n"
+echo "$output=${assigning_configs[$output]}";
+# echo -e "$(cat "$cnf_name") \n"
 # exit 1	
 echo "********************* END ******************************"
 # echo ${config[@]}
-
-
-
-
-
