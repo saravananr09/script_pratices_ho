@@ -1,0 +1,56 @@
+#!/usr/bin/bash
+
+#Scope is to stop or restart the mysql nodes as per user's req.
+#thread needs the sudo priv, to process further.
+
+# if we need to flush the sanity log before starting process.
+
+# flushing_old_log=$(> /tmp/mysql/gr-node.log)
+# if [[ "$?" == 0 ]]; then
+#   echo "Flushed the old sanity log ."
+# else
+#   echo "ERROR:OCCURED - while flushing old sanity log !"
+# fi
+
+# get option from the user
+work="$1"
+
+scrScope() {
+    local job="$1"
+    declare -a methods=("start" "stop" "restart" "status")
+    declare -A map
+    for key in "${!methods[@]}"; do
+        map[${methods[$key]}]="$key"
+    done
+
+    if [[ -n "${map[$job]}" ]]; then
+        echo "Choosened job is ${job} and initiating same for all the G-R nodes..."
+        declare -a mysql_nodes
+        mysql_nodes=("gr-node-1" "gr-node-2" "gr-node-3")
+
+        # performing opertions -- thread's core part
+        for node in ${mysql_nodes[@]}; do
+            # set -x
+            echo "Application started . . ."
+            echo "Working on ${node}"
+            # echo "and the job is ${job}"
+            sanity=$(systemctl ${job} ${node})
+            wait
+            sleep 1
+            printf "%s\n" "Job done for ${node}"
+            echo "${sanity}" >>/tmp/mysql/gr-node.log
+            wait
+            sleep 1
+        done
+    else
+        echo "inValid Options found ! "
+    fi
+}
+
+if [[ ! -z "$work" ]]; then
+    echo "  "
+    scrScope "$work"
+else
+    echo "EMPTY, try with options ==> { restart | stop | start | status }"
+    exit 0
+fi
